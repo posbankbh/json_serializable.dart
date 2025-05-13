@@ -212,19 +212,12 @@ mixin DecodeHelper implements HelperCore {
     if (type is InterfaceType && !type.element.constructors.any((e) => e.isConst) && field.type.nullabilitySuffix == NullabilitySuffix.none) {
       final parameterLessCtor = _findUsableConstructor(type);
       if (parameterLessCtor != null) {
-        return '${_toStringNonNullable(type)}()';
+        return '${type.getDisplayString(withNullability: false)}()';
       }
     }
 
     return null;
   }
-
-  String _toStringNonNullable(DartType type) {
-    final val = type.getDisplayString();
-    if (val.endsWith('?')) return val.substring(0, val.length - 1);
-    return val;
-  }
-
 
   /// If [checkedProperty] is `true`, we're using this function to write to a
   /// setter.
