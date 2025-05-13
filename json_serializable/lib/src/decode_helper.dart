@@ -195,6 +195,8 @@ mixin DecodeHelper implements HelperCore {
    ConstructorElement? _findUsableConstructor(DartType type) {
     if (type is InterfaceType) {
       for (final constructor in type.element.constructors) {
+        if (constructor.name.isNotEmpty) continue; //Ignore named constractors
+
         final hasOnlyOptionalParameters =
             constructor.parameters.every((param) => param.isOptional);
 
@@ -206,10 +208,31 @@ mixin DecodeHelper implements HelperCore {
     return null;
   }
 
+bool _isBuiltInType(DartType type) => type.isDartAsyncFuture ||
+         type.isDartAsyncFutureOr ||
+         type.isDartAsyncStream ||
+         type.isDartCoreBool ||
+         type.isDartCoreDouble ||
+         type.isDartCoreEnum ||
+         type.isDartCoreFunction ||
+         type.isDartCoreInt ||
+         type.isDartCoreIterable ||
+         type.isDartCoreList ||
+         type.isDartCoreMap ||
+         type.isDartCoreNull ||
+         type.isDartCoreNum ||
+         type.isDartCoreObject ||
+         type.isDartCoreRecord ||
+         type.isDartCoreSet ||
+         type.isDartCoreString ||
+         type.isDartCoreSymbol ||
+         type.isDartCoreType;
+
   String? _getDefaultValue(KeyConfig key, DartType type, FieldElement field) {
     if (key.defaultValue != null) return key.defaultValue;
+    if (_isBuiltInType(type)) return null;
 
-    if (type is InterfaceType && !type.element.constructors.any((e) => e.isConst) && field.type.nullabilitySuffix == NullabilitySuffix.none) {
+    if (type is InterfaceType && type.element is ClassElement && !type.element.constructors.any((e) => e.isConst) && field.type.nullabilitySuffix == NullabilitySuffix.none) {
       final parameterLessCtor = _findUsableConstructor(type);
       if (parameterLessCtor != null) {
         return '${type.getDisplayString(withNullability: false)}()';
