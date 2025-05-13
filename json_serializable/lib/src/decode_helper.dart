@@ -4,12 +4,14 @@
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import 'helper_core.dart';
 import 'json_literal_generator.dart';
+import 'type_helpers/config_types.dart';
 import 'type_helpers/generic_factory_helper.dart';
 import 'unsupported_type_error.dart';
 import 'utils.dart';
@@ -190,6 +192,40 @@ mixin DecodeHelper implements HelperCore {
     }
   }
 
+   ConstructorElement? _findUsableConstructor(DartType type) {
+    if (type is InterfaceType) {
+      for (final constructor in type.element.constructors) {
+        final hasOnlyOptionalParameters =
+            constructor.parameters.every((param) => param.isOptional || (param.isNamed && !param.isRequiredNamed));
+
+        if (constructor.parameters.isEmpty || hasOnlyOptionalParameters) {
+          return constructor;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? _getDefaultValue(KeyConfig key, DartType type, FieldElement field) {
+    if (key.defaultValue != null) return key.defaultValue;
+
+    if (type is InterfaceType && !type.element.constructors.any((e) => e.isConst) && field.type.nullabilitySuffix == NullabilitySuffix.none) {
+      final parameterLessCtor = _findUsableConstructor(type);
+      if (parameterLessCtor != null) {
+        return '${_toStringNonNullable(type)}()';
+      }
+    }
+
+    return null;
+  }
+
+  String _toStringNonNullable(DartType type) {
+    final val = type.getDisplayString();
+    if (val.endsWith('?')) return val.substring(0, val.length - 1);
+    return val;
+  }
+
+
   /// If [checkedProperty] is `true`, we're using this function to write to a
   /// setter.
   String _deserializeForField(
@@ -201,7 +237,7 @@ mixin DecodeHelper implements HelperCore {
     final targetType = ctorParam?.type ?? field.type;
     final contextHelper = getHelperContext(field);
     final jsonKey = jsonKeyFor(field);
-    final defaultValue = jsonKey.defaultValue;
+    final defaultValue = _getDefaultValue(jsonKey, targetType,  field);
     final readValueFunc = jsonKey.readValueFunctionName;
 
     String deserialize(String expression) => contextHelper
