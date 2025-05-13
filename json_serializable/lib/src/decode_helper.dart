@@ -196,7 +196,7 @@ mixin DecodeHelper implements HelperCore {
     if (type is InterfaceType) {
       for (final constructor in type.element.constructors) {
         final hasOnlyOptionalParameters =
-            constructor.parameters.every((param) => param.isOptional || (param.isNamed && !param.isRequiredNamed));
+            constructor.parameters.every((param) => param.isOptional);
 
         if (constructor.parameters.isEmpty || hasOnlyOptionalParameters) {
           return constructor;
