@@ -4,12 +4,14 @@
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import 'helper_core.dart';
 import 'json_literal_generator.dart';
+import 'type_helpers/config_types.dart';
 import 'type_helpers/generic_factory_helper.dart';
 import 'unsupported_type_error.dart';
 import 'utils.dart';
@@ -190,6 +192,56 @@ mixin DecodeHelper implements HelperCore {
     }
   }
 
+   ConstructorElement? _findUsableConstructor(DartType type) {
+    if (type is InterfaceType) {
+      for (final constructor in type.element.constructors) {
+        if (constructor.name.isNotEmpty) continue; //Ignore named constractors
+
+        final hasOnlyOptionalParameters =
+            constructor.parameters.every((param) => param.isOptional);
+
+        if (constructor.parameters.isEmpty || hasOnlyOptionalParameters) {
+          return constructor;
+        }
+      }
+    }
+    return null;
+  }
+
+bool _isBuiltInType(DartType type) => type.isDartAsyncFuture ||
+         type.isDartAsyncFutureOr ||
+         type.isDartAsyncStream ||
+         type.isDartCoreBool ||
+         type.isDartCoreDouble ||
+         type.isDartCoreEnum ||
+         type.isDartCoreFunction ||
+         type.isDartCoreInt ||
+         type.isDartCoreIterable ||
+         type.isDartCoreList ||
+         type.isDartCoreMap ||
+         type.isDartCoreNull ||
+         type.isDartCoreNum ||
+         type.isDartCoreObject ||
+         type.isDartCoreRecord ||
+         type.isDartCoreSet ||
+         type.isDartCoreString ||
+         type.isDartCoreSymbol ||
+         type.isDartCoreType;
+
+  String? _getDefaultValue(KeyConfig key, DartType type, FieldElement field) {
+    if (key.defaultValue != null) return key.defaultValue;
+    if (_isBuiltInType(type)) return null;
+
+    if (type is InterfaceType && type.element is ClassElement && !type.element.constructors.any((e) => e.isConst) && field.type.nullabilitySuffix == NullabilitySuffix.none) {
+      final parameterLessCtor = _findUsableConstructor(type);
+      if (parameterLessCtor != null) {
+        return '${type.getDisplayString(withNullability: false)}()';
+      }
+    }
+
+    return null;
+  }
+
   /// If [checkedProperty] is `true`, we're using this function to write to a
   /// setter.
   String _deserializeForField(
@@ -201,7 +253,7 @@ mixin DecodeHelper implements HelperCore {
     final targetType = ctorParam?.type ?? field.type;
     final contextHelper = getHelperContext(field);
     final jsonKey = jsonKeyFor(field);
-    final defaultValue = jsonKey.defaultValue;
+    final defaultValue = _getDefaultValue(jsonKey, targetType,  field);
     final readValueFunc = jsonKey.readValueFunctionName;
 
     String deserialize(String expression) => contextHelper
