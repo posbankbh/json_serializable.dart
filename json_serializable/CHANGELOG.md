@@ -1,6 +1,42 @@
-## 6.9.6-wip
+## 6.11.3
 
+- Require `analyzer: ^9.0.0`
+- Require `build: ^4.0.3`
+- Require `build_config: ^1.2.0`
+- Require `dart_style: ^3.1.3`
+- Require `sdk: ^3.9.0`
+- Require `source_gen: ^4.1.1`
+- Require `source_helper: ^1.3.9`
+
+## 6.11.2
+
+- Allow `run_only_if_triggered` to be specified in `build.yaml` to turn on the
+  `build_runner` triggers heuristic.
+- Skip warning about annotations on both constructor and field if the values
+  match.
+
+## 6.11.1
+
+- Allow `build: '>=3.0.0 <5.0.0'`.
+- Allow `source_gen: '>=3.1.0 <5.0.0'`.
+
+## 6.11.0
+
+- Support `JsonKey` annotation on constructor parameters.
+- Require `analyzer: '>=7.4.0 <9.0.0'`
+- Require `dart_style: ^3.0.0`
+- Require `meta: ^1.15.0`
+- Require `source_helper: ^1.3.6`
+- Require `source_gen: ^3.1.0`, stop using deprecated `TypeChecker.fromRuntime`
+  and use the new `TypeChecker.typeNamed` instead.
+
+## 6.10.0
+
+- Required `analyzer: ^7.4.0`.
+- Switch to analyzer element2 model and `build: ^3.0.0-dev`.
 - Move `package:collection` to a dev dependency.
+- Use new `null-aware element` feature in generated code.
+- Require Dart 3.8
 
 ## 6.9.5
 

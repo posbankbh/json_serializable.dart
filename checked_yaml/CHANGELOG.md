@@ -1,6 +1,11 @@
-## 2.0.4-wip
+## 2.0.5-wip
 
-- Require Dart 3.6
+- Require `sdk: ^3.9.0`
+- Require `yaml: ^3.1.3`
+
+## 2.0.4
+
+- Require Dart 3.8
 
 ## 2.0.3
 
